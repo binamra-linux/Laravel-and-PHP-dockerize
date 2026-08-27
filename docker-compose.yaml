@@ -1,13 +1,13 @@
-version: "3.8"
-
 services:
   nginxserver:
     image: "nginx:stable-alpine"
     ports:
       - "8080:80"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./src:/var/www/html
+    depends_on:
+      - php
 
   php:
     build:
@@ -15,6 +15,10 @@ services:
       dockerfile: php.dockerfile
     volumes:
       - ./src:/var/www/html:delegated
+    environment:
+      TMPDIR: /tmp
+    depends_on:
+      - mysql
   mysql:
     image: mysql:5.7
     env_file:
@@ -27,6 +31,18 @@ services:
       dockerfile: composer.dockerfile
     volumes:
       - ./src:/var/www/html
-  # artisian:
-  # npm:
+  artisian:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
+    volumes:
+      - ./src:/var/www/html
+    entrypoint: ["php", "/var/www/html/artisan"]
+
+  npm:
+    image: node:18-alpine
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    entrypoint: ["npm"]
 
